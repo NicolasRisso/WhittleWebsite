@@ -80,7 +80,19 @@ export function explain(error) {
   if (error.code === -3 && /buffer|uri|missing/i.test(error.message)) {
     return `${error.message}. A .gltf must embed its buffers; export a .glb instead.`;
   }
+  if (error.code === -3) return `${error.message}. This file is damaged or not a valid model.`;
   return error.message;
+}
+
+// What to tell the person after the module trapped. Only a real allocation failure (V8 words it
+// "Out of memory", "Cannot allocate", "Memory.grow(): Maximum memory size exceeded") is blamed on
+// memory; a trap while loading a file is read as a damaged file; anything else is just unexpected.
+export function explainTrap(error, loading = false) {
+  if (/memory|alloc/i.test(String(error?.message ?? ""))) {
+    return "The module stopped unexpectedly, most likely for lack of memory. Load the file again, or use the command-line tool for a model this large.";
+  }
+  if (loading) return "This file is damaged or not a valid model. Try another file, or export it again from your 3D tool.";
+  return "The module stopped unexpectedly. Load the file again.";
 }
 
 // A promise-based client for worker.js. `restart` makes a fresh worker (after a trap).
@@ -151,14 +163,14 @@ function start() {
     ui.status.className = `status ${kind}`.trim();
   }
 
-  async function guard(task) {
+  async function guard(task, loading = false) {
     try {
       return await task();
     } catch (e) {
       if (e.trap) {
         client.restart();
         clearModel();
-        setStatus("The module stopped unexpectedly, most likely for lack of memory. Load the file again, or use the command-line tool for a model this large.", "bad");
+        setStatus(explainTrap(e, loading), "bad");
       } else {
         setStatus(explain(e), "bad");
       }
@@ -241,7 +253,7 @@ function start() {
     app.formatHint = format;
     const bytes = await file.arrayBuffer();
     const generation = app.generation;
-    const info = await guard(() => client.call("load", { bytes: new Uint8Array(bytes), format }, [bytes]));
+    const info = await guard(() => client.call("load", { bytes: new Uint8Array(bytes), format }, [bytes]), true);
     if (info && generation === app.generation) await admit(info, baseName(file.name));
   }
 
