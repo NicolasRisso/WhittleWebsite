@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'">
+<title>Whittle: LODs in your browser</title>
+<meta name="description" content="Make levels of detail for a 3D model in your browser. Nothing is uploaded.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<header>
+  <h1>Whittle: LODs in your browser</h1>
+  <p class="lede">Drop a model, pick how many triangles each level of detail keeps, download the files.</p>
+</header>
+
+<main>
+  <div class="controls">
+  <section class="panel" aria-labelledby="h-model">
+    <h2 id="h-model">Model</h2>
+    <label id="drop" class="drop" for="file">
+      <span class="drop-title">Drop a .glb, .gltf or .obj here</span>
+      <span class="drop-sub">or choose a file (a .gltf must embed its buffers)</span>
+      <input id="file" type="file" accept=".glb,.gltf,.obj">
+    </label>
+    <div class="samples" role="group" aria-label="Sample models">
+      <span class="label">or try</span>
+      <button type="button" data-sample="sphere">Sphere</button>
+      <button type="button" data-sample="cylinder">Seamed cylinder</button>
+      <button type="button" data-sample="tube">Bending tube</button>
+    </div>
+    <p id="model" class="model" hidden></p>
+  </section>
+
+  <section class="panel" id="lods-panel" aria-labelledby="h-lods" hidden>
+    <h2 id="h-lods">Levels of detail</h2>
+    <div class="settings">
+      <label>Method
+        <select id="method">
+          <option value="0">lod: keeps the shape</option>
+          <option value="1">cluster: even triangles</option>
+        </select>
+      </label>
+      <label>Download as
+        <select id="format">
+          <option value="1">GLB</option>
+          <option value="2">OBJ</option>
+        </select>
+      </label>
+    </div>
+    <ol id="lods" class="lods"></ol>
+    <div class="actions">
+      <button type="button" id="add">Add a LOD</button>
+      <button type="button" id="build" hidden>Build</button>
+      <button type="button" id="zip" class="primary">Download all (.zip)</button>
+    </div>
+    <p id="note" class="note" hidden></p>
+  </section>
+  </div>
+
+  <section class="panel viewer-panel" id="viewer-panel" aria-labelledby="h-view" hidden>
+    <h2 id="h-view">Preview</h2>
+    <div class="viewbar">
+      <div id="lod-buttons" class="seg" role="group" aria-label="Level of detail shown"></div>
+      <div class="seg" role="group" aria-label="Display">
+        <button type="button" id="side" aria-pressed="false">Side by side</button>
+        <button type="button" id="wire" aria-pressed="false">Wireframe</button>
+        <button type="button" id="shade" aria-pressed="false">Flat</button>
+      </div>
+    </div>
+    <div class="stage">
+      <canvas id="canvas" aria-label="3D preview of the model. Drag to turn it, scroll or pinch to zoom."></canvas>
+      <div id="labels" class="labels" aria-hidden="true"></div>
+    </div>
+    <p class="hint">Drag to turn, scroll or pinch to zoom.</p>
+  </section>
+
+  <p id="status" class="status" role="status" aria-live="polite">Loading the module…</p>
+</main>
+
+<footer>
+  <p>Everything runs in your browser: your file never leaves this computer.</p>
+  <p class="build">Build <span id="sha">dev</span></p>
+</footer>
+</body>
+</html>
